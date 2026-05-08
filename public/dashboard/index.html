@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Receptionist Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F0F13;
+  --surface:#16161D;
+  --surface2:#1C1C26;
+  --surface3:#232330;
+  --border:#2A2A38;
+  --border2:#333345;
+  --text:#F0EFF8;
+  --muted:#8884A8;
+  --muted2:#5C5A78;
+  --accent:#7C6AF7;
+  --accent2:#9D8FFA;
+  --accent-bg:rgba(124,106,247,0.12);
+  --accent-border:rgba(124,106,247,0.3);
+  --green:#34D399;
+  --green-bg:rgba(52,211,153,0.1);
+  --green-border:rgba(52,211,153,0.25);
+  --red:#F87171;
+  --red-bg:rgba(248,113,113,0.1);
+  --amber:#FBBF24;
+  --amber-bg:rgba(251,191,36,0.1);
+  --radius:12px;
+  --radius-sm:8px;
+  --radius-xs:6px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Layout ── */
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo-wrap{padding:22px 20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.logo-icon{width:38px;height:38px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo-text{font-size:15px;font-weight:600;color:var(--text)}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+.nav{padding:14px 10px;flex:1;overflow-y:auto}
+.nav-label{font-size:10px;font-weight:600;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;padding:10px 12px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;transition:all .15s;margin-bottom:2px;border:1px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent2);border-color:var(--accent-border)}
+.nav-item svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+
+.live-pill{margin:0 12px 16px;padding:10px 14px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--green)}
+.pulse-dot{width:8px;height:8px;background:var(--green);border-radius:50%;flex-shrink:0;animation:pulseAnim 2s ease infinite}
+@keyframes pulseAnim{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+/* ── Main ── */
+.main{overflow-y:auto;display:flex;flex-direction:column}
+.topbar{padding:20px 32px 0;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.topbar-left h1{font-size:20px;font-weight:600}
+.topbar-left p{font-size:13px;color:var(--muted);margin-top:2px}
+.btn-primary{padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.01em}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+
+.content{padding:24px 32px 40px;flex:1}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s}
+.stat:hover{border-color:var(--border2)}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0;transition:opacity .2s}
+.stat:hover::before{opacity:1}
+.stat-label{font-size:11.5px;color:var(--muted);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.stat-val{font-size:32px;font-weight:700;line-height:1;color:var(--text)}
+.stat-sub{font-size:11.5px;color:var(--muted);margin-top:6px}
+.stat-sub.green{color:var(--green)}
+.stat-sub.accent{color:var(--accent2)}
+
+/* ── Grid ── */
+.grid-2{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+
+/* ── Card ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-title{font-size:14px;font-weight:600;color:var(--text)}
+.card-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.card-actions{display:flex;gap:8px;align-items:center}
+
+/* ── Filter row ── */
+.filter-row{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.filter-row input,.filter-row select{height:34px;padding:0 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius-xs);background:var(--surface2);color:var(--text);font-family:inherit;transition:border-color .15s;outline:none}
+.filter-row input{width:220px}
+.filter-row input:focus,.filter-row select:focus{border-color:var(--accent)}
+.filter-row select option{background:var(--surface2)}
+
+/* ── Table ── */
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:12px 16px;font-size:13.5px;vertical-align:middle}
+
+.person-cell{display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent2);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.nm{font-weight:500;font-size:13.5px;color:var(--text)}
+.ns{font-size:11.5px;color:var(--muted);margin-top:1px;font-family:'JetBrains Mono',monospace}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11.5px;font-weight:600}
+.badge.confirmed{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge.cancelled{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.badge.pending{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+.badge.ai{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border)}
+.bdot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+.act-row{display:flex;gap:6px}
+.btn-xs{padding:5px 11px;border-radius:var(--radius-xs);font-size:12px;font-weight:500;border:1px solid var(--border2);background:transparent;cursor:pointer;font-family:inherit;color:var(--muted);transition:all .12s}
+.btn-xs:hover{background:var(--surface3);color:var(--text);border-color:var(--border2)}
+.btn-xs.del:hover{background:var(--red-bg);color:var(--red);border-color:rgba(248,113,113,.3)}
+.btn-xs.restore:hover{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+
+/* ── Right panel ── */
+.right-panel{display:flex;flex-direction:column;gap:16px}
+
+/* ── Calendar ── */
+.cal-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cal-month{font-size:14px;font-weight:600}
+.cal-nav{display:flex;gap:4px}
+.cal-nav button{width:28px;height:28px;border:1px solid var(--border2);border-radius:var(--radius-xs);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.cal-nav button:hover{background:var(--surface3);color:var(--text)}
+.cal-body{padding:12px}
+.day-labels{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.day-labels span{text-align:center;font-size:10.5px;font-weight:600;color:var(--muted2);padding:3px 0}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cday{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12.5px;border-radius:6px;cursor:pointer;position:relative;transition:all .12s;color:var(--muted)}
+.cday:hover{background:var(--surface3);color:var(--text)}
+.cday.today{color:var(--accent2);font-weight:700}
+.cday.selected{background:var(--accent);color:#fff;font-weight:600}
+.cday.other{color:var(--border2);cursor:default}
+.cday.has-bk::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.cday.selected.has-bk::after{background:rgba(255,255,255,.7)}
+
+.slots-wrap{padding:14px 16px;border-top:1px solid var(--border)}
+.slots-label{font-size:10.5px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.slots-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.slot{padding:7px 4px;text-align:center;font-size:12px;font-weight:500;border-radius:var(--radius-xs);border:1px solid var(--border2);cursor:pointer;background:transparent;color:var(--muted);transition:all .12s;font-family:inherit}
+.slot.free:hover{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent2)}
+.slot.taken{background:var(--surface2);color:var(--border2);cursor:default;text-decoration:line-through;font-size:11px}
+
+/* ── Add booking form ── */
+.form-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+.fl{font-size:10.5px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
+.fi{width:100%;padding:9px 12px;font-size:13.5px;border:1px solid var(--border2);border-radius:var(--radius-xs);background:var(--surface2);color:var(--text);font-family:inherit;transition:border-color .15s;outline:none}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--muted2)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── Voice Agent Widget ── */
+.widget-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:0}
+.widget-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.agent-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#A78BFA);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.agent-avatar svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.agent-name{font-size:15px;font-weight:600;color:var(--text)}
+.agent-status{font-size:12px;color:var(--green);display:flex;align-items:center;gap:5px;margin-top:2px}
+
+.chat-box{height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding-right:4px}
+.msg{display:flex;gap:8px;align-items:flex-end;max-width:88%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.msg-av.a{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border)}
+.msg-av.u{background:var(--surface3);color:var(--muted);border:1px solid var(--border2)}
+.bubble{padding:9px 13px;border-radius:12px;font-size:13.5px;line-height:1.55;color:var(--text)}
+.msg.agent .bubble{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:3px}
+.msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+.typing-bub{display:flex;gap:4px;align-items:center;padding:10px 14px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bounce 1.2s ease infinite}
+.dot:nth-child(2){animation-delay:.15s}
+.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.voice-bar{display:flex;gap:10px;align-items:flex-end}
+.voice-bar textarea{flex:1;padding:10px 13px;font-size:13.5px;border:1px solid var(--border2);border-radius:var(--radius-sm);resize:none;min-height:42px;max-height:90px;font-family:inherit;background:var(--surface);color:var(--text);line-height:1.5;outline:none;transition:border-color .15s}
+.voice-bar textarea:focus{border-color:var(--accent)}
+.voice-bar textarea::placeholder{color:var(--muted2)}
+.mic-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--border2);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.mic-btn svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round}
+.mic-btn:hover{background:var(--surface3);border-color:var(--border2)}
+.mic-btn.on{background:var(--red-bg);border-color:rgba(248,113,113,.4)}
+.mic-btn.on svg{stroke:var(--red)}
+.send-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.send-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.send-btn:hover{background:var(--accent2)}
+.send-btn:active{transform:scale(.95)}
+.send-btn:disabled{background:var(--border2);cursor:not-allowed}
+
+.quick-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.qbtn{font-size:12px;padding:5px 12px;border-radius:100px;border:1px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);transition:all .12s;font-family:inherit;white-space:nowrap}
+.qbtn:hover{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent2)}
+
+/* ── Config page ── */
+.config-wrap{max-width:640px}
+.config-section{margin-bottom:28px}
+.config-section h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.config-section p{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.services-list{display:flex;flex-direction:column;gap:8px}
+.service-row{display:flex;gap:8px;align-items:center}
+.service-row .fi{flex:1}
+.rm-btn{width:32px;height:32px;border-radius:var(--radius-xs);border:1px solid var(--border2);background:transparent;color:var(--red);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .12s;flex-shrink:0}
+.rm-btn:hover{background:var(--red-bg)}
+.add-btn{padding:7px 14px;border:1px dashed var(--border2);border-radius:var(--radius-xs);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .12s;text-align:left}
+.add-btn:hover{border-color:var(--accent-border);color:var(--accent2)}
+.code-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);line-height:2;overflow-x:auto}
+.code-block .key{color:var(--accent2)}
+.code-block .val{color:var(--green)}
+.step-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:50%;font-size:11.5px;font-weight:700;color:var(--accent2);margin-right:10px;flex-shrink:0}
+.step-row{display:flex;align-items:flex-start;gap:0;margin-bottom:16px}
+.step-content h4{font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.8}
+.step-content p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:11px 18px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:500;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s ease;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── Empty ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+
+/* ── Share link ── */
+.share-wrap{display:flex;gap:10px;align-items:center;background:var(--surface2);border:1px solid var(--accent-border);border-radius:var(--radius-sm);padding:10px 14px;margin-top:8px}
+.share-url{flex:1;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--accent2);word-break:break-all}
+.copy-btn{padding:6px 12px;border:1px solid var(--accent-border);border-radius:var(--radius-xs);background:var(--accent-bg);color:var(--accent2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .12s;white-space:nowrap;flex-shrink:0}
+.copy-btn:hover{background:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 015.19 15.9 19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+    </div>
+    <div>
+      <div class="logo-text" id="sb-biz-name">AI Receptionist</div>
+      <div class="logo-sub">Management Dashboard</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Workspace</div>
+    <div class="nav-item active" onclick="page('bookings',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Bookings
+    </div>
+    <div class="nav-item" onclick="page('agent',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      AI Agent
+    </div>
+    <div class="nav-label">Settings</div>
+    <div class="nav-item" onclick="page('config',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Configure Agent
+    </div>
+    <div class="nav-item" onclick="page('setup',this)">
+      <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Go Live Setup
+    </div>
+  </nav>
+  <div class="live-pill">
+    <span class="pulse-dot"></span>
+    <span>AI Agent Online</span>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+<!-- ════ PAGE: BOOKINGS ════ -->
+<div id="pg-bookings">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Bookings</h1>
+      <p>All appointments booked by your AI receptionist</p>
+    </div>
+    <button class="btn-primary" onclick="document.getElementById('add-form-card').scrollIntoView({behavior:'smooth'})">+ New Booking</button>
+  </div>
+  <div class="content">
+    <div class="stats-row">
+      <div class="stat"><div class="stat-label">Total Bookings</div><div class="stat-val" id="s-total">0</div><div class="stat-sub">All time</div></div>
+      <div class="stat"><div class="stat-label">Today</div><div class="stat-val" id="s-today">0</div><div class="stat-sub green">Appointments</div></div>
+      <div class="stat"><div class="stat-label">This Month</div><div class="stat-val" id="s-month">0</div><div class="stat-sub accent">Total</div></div>
+      <div class="stat"><div class="stat-label">AI Booked</div><div class="stat-val" id="s-ai">0</div><div class="stat-sub accent">Auto-captured</div></div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Table -->
+      <div>
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">All Appointments</div></div>
+            <div class="card-actions">
+              <button class="btn-xs" onclick="loadBookings()">↻ Refresh</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <input type="text" id="search" placeholder="Search name, phone, service…" oninput="filterBks()"/>
+            <select id="f-status" onchange="filterBks()">
+              <option value="">All Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <input type="date" id="f-date" onchange="filterBks()"/>
+          </div>
+          <table>
+            <thead><tr><th>Client</th><th>Date & Time</th><th>Service</th><th>Source</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="bk-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="right-panel">
+        <!-- Calendar -->
+        <div class="card">
+          <div class="cal-head">
+            <div class="cal-month" id="cal-month-label">May 2026</div>
+            <div class="cal-nav">
+              <button onclick="calShift(-1)">‹</button>
+              <button onclick="calShift(1)">›</button>
+            </div>
+          </div>
+          <div class="cal-body">
+            <div class="day-labels"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+            <div class="days-grid" id="cal-days"></div>
+          </div>
+          <div class="slots-wrap">
+            <div class="slots-label" id="slots-hd">Select a date</div>
+            <div class="slots-grid" id="slots-grid"></div>
+          </div>
+        </div>
+
+        <!-- Add booking -->
+        <div class="card" id="add-form-card">
+          <div class="card-head"><div class="card-title">Add Manual Booking</div></div>
+          <div class="form-body">
+            <div><label class="fl">Full Name</label><input class="fi" id="fn" placeholder="e.g. Priya Sharma"/></div>
+            <div><label class="fl">Phone Number</label><input class="fi" id="fp" placeholder="e.g. 9876543210"/></div>
+            <div class="fg2">
+              <div><label class="fl">Date</label><input class="fi" id="fd" type="date"/></div>
+              <div><label class="fl">Time</label><input class="fi" id="ft" type="time"/></div>
+            </div>
+            <div><label class="fl">Service / Reason</label><input class="fi" id="fs" placeholder="e.g. General Checkup"/></div>
+            <div><label class="fl">Notes</label><input class="fi" id="fnotes" placeholder="Optional…"/></div>
+            <button class="btn-primary" style="width:100%" onclick="addBk()">Save Booking</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PAGE: AGENT ════ -->
+<div id="pg-agent" style="display:none">
+  <div class="topbar">
+    <div class="topbar-left"><h1>AI Agent</h1><p>Test your receptionist live — exactly what your customers experience</p></div>
+    <button class="btn-primary" onclick="copyShareLink()">⬡ Copy Share Link</button>
+  </div>
+  <div class="content">
+    <div class="grid-2">
+      <div class="widget-wrap">
+        <div class="widget-header">
+          <div class="agent-avatar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+          <div>
+            <div class="agent-name" id="agent-name-display">Aria — AI Receptionist</div>
+            <div class="agent-status"><span class="pulse-dot"></span> Online · Powered by Groq Llama 3.3</div>
+          </div>
+        </div>
+        <div class="quick-row" id="quick-row"></div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="voice-bar">
+          <button class="mic-btn" id="mic-btn" title="Voice input">
+            <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+          <textarea id="chat-input" rows="1" placeholder="Type or speak to your AI agent…"></textarea>
+          <button class="send-btn" id="send-btn">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Share With Clients</div></div>
+          <div style="padding:16px">
+            <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">Share this link on your website, WhatsApp, or social media. Customers open it and talk directly to your AI receptionist.</p>
+            <div class="share-wrap">
+              <div class="share-url" id="share-url">Deploy your server to get a shareable link</div>
+              <button class="copy-btn" onclick="copyShareLink()">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">How It Works</div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent2);flex-shrink:0">1</div><div><div style="font-size:13.5px;font-weight:500">Customer opens your link</div><div style="font-size:12px;color:var(--muted);margin-top:2px">They see a clean chat/voice interface</div></div></div>
+            <div style="display:flex;align-items:flex-start;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent2);flex-shrink:0">2</div><div><div style="font-size:13.5px;font-weight:500">AI greets and assists them</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Answers questions, books appointments</div></div></div>
+            <div style="display:flex;align-items:flex-start;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent2);flex-shrink:0">3</div><div><div style="font-size:13.5px;font-weight:500">Booking appears here instantly</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Dashboard updates in real time</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PAGE: CONFIG ════ -->
+<div id="pg-config" style="display:none">
+  <div class="topbar"><div class="topbar-left"><h1>Configure Agent</h1><p>Personalise your AI receptionist for your business</p></div><button class="btn-primary" onclick="saveConfig()">Save Changes</button></div>
+  <div class="content"><div class="config-wrap">
+    <div class="config-section">
+      <h3>Business Details</h3>
+      <p>These details shape how your AI introduces itself and answers questions.</p>
+      <div class="config-grid">
+        <div><label class="fl">Business Name</label><input class="fi" id="c-name" placeholder="City Medical Centre"/></div>
+        <div><label class="fl">Industry</label>
+          <select class="fi" id="c-industry">
+            <option value="hospital">Hospital / Clinic</option>
+            <option value="hotel">Hotel</option>
+            <option value="bank">Bank / Finance</option>
+            <option value="office">Corporate Office</option>
+            <option value="school">School / University</option>
+            <option value="salon">Salon / Spa</option>
+            <option value="restaurant">Restaurant</option>
+          </select>
+        </div>
+        <div><label class="fl">Tagline</label><input class="fi" id="c-tagline" placeholder="Your health, our priority"/></div>
+        <div><label class="fl">Working Hours</label><input class="fi" id="c-hours" placeholder="Mon–Sat, 9 AM to 6 PM"/></div>
+        <div><label class="fl">Address</label><input class="fi" id="c-address" placeholder="123 Main Street"/></div>
+        <div><label class="fl">Slot Duration (mins)</label><input class="fi" id="c-slot" type="number" min="15" max="120" step="15" placeholder="30"/></div>
+      </div>
+    </div>
+    <div class="config-section">
+      <h3>Services Offered</h3>
+      <p>What can customers book? The AI will offer these options.</p>
+      <div class="services-list" id="services-list"></div>
+      <button class="add-btn" style="margin-top:8px;width:100%" onclick="addService()">+ Add Service</button>
+    </div>
+    <div class="config-section">
+      <h3>Welcome Message</h3>
+      <p>First thing the AI says when a customer opens the widget. Use {NAME} for your business name.</p>
+      <textarea class="fi" id="c-welcome" rows="3" style="resize:vertical;padding:10px 12px;line-height:1.6"></textarea>
+    </div>
+    <button class="btn-primary" onclick="saveConfig()" style="width:100%;padding:12px">Save All Changes</button>
+  </div></div>
+</div>
+
+<!-- ════ PAGE: SETUP ════ -->
+<div id="pg-setup" style="display:none">
+  <div class="topbar"><div class="topbar-left"><h1>Go Live Setup</h1><p>Deploy your AI receptionist for free in under 15 minutes</p></div></div>
+  <div class="content"><div class="config-wrap">
+
+    <div class="config-section">
+      <h3>Free Stack — Zero Cost</h3>
+      <p>This entire system runs for free using these services.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:var(--surface2);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:14px"><div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:4px">✓ FREE</div><div style="font-size:14px;font-weight:600">Groq API</div><div style="font-size:12px;color:var(--muted);margin-top:2px">AI brain — Llama 3.3 70B</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:14px"><div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:4px">✓ FREE</div><div style="font-size:14px;font-weight:600">Render.com</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Server hosting</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:14px"><div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:4px">✓ FREE</div><div style="font-size:14px;font-weight:600">Web Speech API</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Voice in + voice out</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:14px"><div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:4px">✓ FREE</div><div style="font-size:14px;font-weight:600">GitHub</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Code hosting</div></div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <h3>Step-by-Step Deployment</h3>
+      <p>Follow these steps exactly. Takes about 15 minutes.</p>
+
+      <div class="step-row"><span class="step-badge">1</span><div class="step-content"><h4>Get your free Groq API key</h4><p>Go to <strong style="color:var(--accent2)">console.groq.com</strong> → Sign up free → API Keys → Create key. Copy it.</p></div></div>
+      <div class="step-row"><span class="step-badge">2</span><div class="step-content"><h4>Upload code to GitHub</h4><p>Go to <strong style="color:var(--accent2)">github.com</strong> → New repository → Upload the project zip files you downloaded.</p></div></div>
+      <div class="step-row"><span class="step-badge">3</span><div class="step-content"><h4>Deploy on Render (free)</h4><p>Go to <strong style="color:var(--accent2)">render.com</strong> → New Web Service → Connect your GitHub repo → Set build command: <code style="color:var(--accent2)">npm install</code> → Start command: <code style="color:var(--accent2)">node server/index.js</code></p></div></div>
+      <div class="step-row"><span class="step-badge">4</span><div class="step-content"><h4>Set your environment variable</h4><p>In Render dashboard → Environment → Add variable:</p>
+      <div class="code-block"><span class="key">GROQ_API_KEY</span> = <span class="val">your_key_here</span></div></div></div>
+      <div class="step-row"><span class="step-badge">5</span><div class="step-content"><h4>You're live!</h4><p>Render gives you a free URL like <code style="color:var(--green)">https://your-app.onrender.com</code> — share this with your clients. That's their AI receptionist link.</p></div></div>
+    </div>
+
+    <div style="background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--radius-sm);padding:20px">
+      <div style="font-size:15px;font-weight:600;color:var(--accent2);margin-bottom:6px">💡 Selling Tip</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">Deploy one instance → set it up for a demo clinic/hospital → show the client how it handles real calls → close the sale → then deploy a fresh instance just for them with their business details. Each client gets their own private deployment on Render's free tier.</p>
+    </div>
+
+  </div></div>
+</div>
+
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let allBks = [], calY, calM, selDate, cfg = {}, chatHistory = [], sessionId = null, speaking = false, recognizing = false;
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ── Page routing ──────────────────────────────────────────────────────────
+function page(name, el) {
+  ['bookings','agent','config','setup'].forEach(p => document.getElementById('pg-'+p).style.display = p===name?'':'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (name==='agent' && !sessionId) initAgent();
+  if (name==='config') loadConfigForm();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg, ms=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), ms);
+}
+
+// ── Stats + Bookings ──────────────────────────────────────────────────────
+async function loadBookings() {
+  try {
+    const r = await fetch('/api/bookings'); allBks = await r.json();
+    const s = await (await fetch('/api/stats')).json();
+    document.getElementById('s-total').textContent = s.total;
+    document.getElementById('s-today').textContent = s.today;
+    document.getElementById('s-month').textContent = s.thisMonth;
+    document.getElementById('s-ai').textContent = s.aiBooked;
+  } catch {
+    allBks = [
+      {id:'BK1',name:'Priya Sharma',phone:'9811234567',date:'2026-05-08',time:'10:00',service:'General Checkup',status:'confirmed',source:'ai-agent',createdAt:'2026-05-08T08:00:00Z'},
+      {id:'BK2',name:'Arjun Mehta',phone:'9876540000',date:'2026-05-08',time:'11:30',service:'Follow-up Visit',status:'confirmed',source:'ai-agent',createdAt:'2026-05-08T09:00:00Z'},
+      {id:'BK3',name:'Sunita Rao',phone:'9999988888',date:'2026-05-09',time:'14:00',service:'Health Checkup',status:'pending',source:'manual',createdAt:'2026-05-07T10:00:00Z'},
+      {id:'BK4',name:'Rajesh Patel',phone:'9123456789',date:'2026-05-07',time:'09:00',service:'Blood Test',status:'cancelled',source:'ai-agent',createdAt:'2026-05-06T12:00:00Z'},
+    ];
+    const today=new Date().toISOString().split('T')[0], month=new Date().toISOString().slice(0,7);
+    document.getElementById('s-total').textContent=allBks.length;
+    document.getElementById('s-today').textContent=allBks.filter(b=>b.date===today).length;
+    document.getElementById('s-month').textContent=allBks.filter(b=>b.date?.startsWith(month)).length;
+    document.getElementById('s-ai').textContent=allBks.filter(b=>b.source==='ai-agent').length;
+  }
+  filterBks(); renderCal();
+}
+
+function filterBks() {
+  const q=document.getElementById('search').value.toLowerCase(), st=document.getElementById('f-status').value, dt=document.getElementById('f-date').value;
+  const filtered = allBks.filter(b=>{
+    if(q && !b.name?.toLowerCase().includes(q) && !b.phone?.includes(q) && !b.service?.toLowerCase().includes(q)) return false;
+    if(st && b.status!==st) return false;
+    if(dt && b.date!==dt) return false;
+    return true;
+  });
+  const tb = document.getElementById('bk-table');
+  if(!filtered.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📋</div><p>No bookings found.</p></div></td></tr>';return;}
+  tb.innerHTML = [...filtered].sort((a,b)=>(a.date+a.time)>(b.date+b.time)?1:-1).map(b=>{
+    const ini=(b.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const ds=b.date?new Date(b.date+'T12:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—';
+    return `<tr>
+      <td><div class="person-cell"><div class="avatar">${ini}</div><div><div class="nm">${b.name||'—'}</div><div class="ns">${b.phone||''}</div></div></div></td>
+      <td><div class="nm">${ds}</div><div class="ns">${b.time||'—'}</div></td>
+      <td style="color:var(--muted)">${b.service||'—'}</td>
+      <td><span class="badge ${b.source==='ai-agent'?'ai':''}">${b.source==='ai-agent'?'🤖 AI':'👤 Manual'}</span></td>
+      <td><span class="badge ${b.status||'pending'}"><span class="bdot"></span>${b.status||'pending'}</span></td>
+      <td><div class="act-row">
+        ${b.status!=='cancelled'?`<button class="btn-xs" onclick="updBk('${b.id}','cancelled')">Cancel</button>`:`<button class="btn-xs restore" onclick="updBk('${b.id}','confirmed')">Restore</button>`}
+        <button class="btn-xs del" onclick="delBk('${b.id}')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function updBk(id,status){
+  allBks=allBks.map(b=>b.id===id?{...b,status}:b);
+  try{await fetch('/api/bookings/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})})}catch{}
+  filterBks();renderCal();toast(`Booking ${status}`);
+}
+async function delBk(id){
+  if(!confirm('Delete this booking?'))return;
+  allBks=allBks.filter(b=>b.id!==id);
+  try{await fetch('/api/bookings/'+id,{method:'DELETE'})}catch{}
+  loadBookings();toast('Booking deleted');
+}
+async function addBk(){
+  const name=document.getElementById('fn').value.trim(), phone=document.getElementById('fp').value.trim(), date=document.getElementById('fd').value, time=document.getElementById('ft').value, service=document.getElementById('fs').value.trim(), notes=document.getElementById('fnotes').value.trim();
+  if(!name||!date||!time){toast('Please fill Name, Date and Time');return;}
+  const bk={name,phone,date,time,service,notes,status:'confirmed',source:'manual'};
+  try{const r=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bk)});allBks.push(await r.json());}
+  catch{allBks.push({id:'BK'+Date.now(),...bk,createdAt:new Date().toISOString()});}
+  ['fn','fp','fd','ft','fs','fnotes'].forEach(id=>document.getElementById(id).value='');
+  loadBookings();toast('✓ Booking saved');
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────
+function initCal(){const n=new Date();calY=n.getFullYear();calM=n.getMonth();selDate=n.toISOString().split('T')[0];}
+function calShift(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
+function renderCal(){
+  document.getElementById('cal-month-label').textContent=`${MONTHS[calM]} ${calY}`;
+  const first=new Date(calY,calM,1).getDay(), days=new Date(calY,calM+1,0).getDate(), today=new Date().toISOString().split('T')[0];
+  const bkDates=new Set(allBks.filter(b=>b.status!=='cancelled').map(b=>b.date));
+  let h='';
+  for(let i=0;i<first;i++)h+=`<div class="cday other"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let c='cday';
+    if(ds===today)c+=' today';if(ds===selDate)c+=' selected';if(bkDates.has(ds))c+=' has-bk';
+    h+=`<div class="${c}" onclick="pickDate('${ds}')">${d}</div>`;
+  }
+  document.getElementById('cal-days').innerHTML=h;
+  if(selDate)loadSlots(selDate);
+}
+function pickDate(ds){selDate=ds;renderCal();}
+async function loadSlots(date){
+  const d=new Date(date+'T12:00');
+  document.getElementById('slots-hd').textContent=d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+  let slots;
+  try{const r=await fetch('/api/slots/'+date);slots=await r.json();}
+  catch{
+    const bked=new Set(allBks.filter(b=>b.date===date&&b.status!=='cancelled').map(b=>b.time));
+    slots=[];for(let h=9;h<18;h++){['00','30'].forEach(m=>{const t=`${String(h).padStart(2,'0')}:${m}`;slots.push({time:t,available:!bked.has(t)});});}
+  }
+  document.getElementById('slots-grid').innerHTML=slots.map(s=>`<button class="slot ${s.available?'free':'taken'}" ${!s.available?'disabled':''} onclick="prefill('${date}','${s.time}')">${s.time}</button>`).join('');
+}
+function prefill(date,time){document.getElementById('fd').value=date;document.getElementById('ft').value=time;document.getElementById('add-form-card').scrollIntoView({behavior:'smooth'});document.getElementById('fn').focus();}
+
+// ── AI Agent ──────────────────────────────────────────────────────────────
+const QUICK = {
+  hospital:['Book appointment','What are your hours?','Where are you located?','What services do you offer?'],
+  hotel:['Book a room','Check-in time?','What amenities do you have?','Need directions'],
+  bank:['Branch timings','Loan enquiry','Lost my card','Book advisor'],
+  office:['Schedule a meeting','Speak to HR','Office hours?','Leave a message'],
+  school:['Admissions info','Fee structure','Exam schedule','Talk to a teacher'],
+  salon:['Book appointment','What services?','Pricing info','Opening hours'],
+  restaurant:['Book a table','Menu info','Timings','Special requests'],
+};
+
+function initAgent(){
+  sessionId='sess_'+Math.random().toString(36).slice(2);
+  chatHistory=[];
+  document.getElementById('chat-box').innerHTML='';
+  const ind=cfg.industry||'hospital';
+  const qs=QUICK[ind]||QUICK.hospital;
+  document.getElementById('quick-row').innerHTML=qs.map(q=>`<button class="qbtn" onclick="sendMsg('${q}')">${q}</button>`).join('');
+  document.getElementById('agent-name-display').textContent=`Aria — ${cfg.name||'AI'} Receptionist`;
+  sendMsg(null,true);
+}
+
+function appendMsg(role,text){
+  const box=document.getElementById('chat-box');
+  const div=document.createElement('div');
+  div.className='msg '+role;
+  div.innerHTML=`<div class="msg-av ${role==='agent'?'a':'u'}">${role==='agent'?'AI':'You'}</div><div class="bubble">${text}</div>`;
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+function showTyping(){
+  const box=document.getElementById('chat-box');
+  const div=document.createElement('div');div.id='typing';div.className='msg agent';
+  div.innerHTML='<div class="msg-av a">AI</div><div class="bubble"><div class="typing-bub"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>';
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+function rmTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+
+function speakText(text){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=1.05;u.pitch=1;
+  const voices=window.speechSynthesis.getVoices();
+  const v=voices.find(v=>v.lang.startsWith('en')&&(v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('zira')||v.name.toLowerCase().includes('samantha')))
+    ||voices.find(v=>v.lang.startsWith('en'))||voices[0];
+  if(v)u.voice=v;
+  window.speechSynthesis.speak(u);
+}
+
+async function sendMsg(text, isFirst=false){
+  const inp=document.getElementById('chat-input');
+  const msg=text||inp.value.trim();
+  if(!msg&&!isFirst)return;
+  inp.value='';inp.style.height='auto';
+  document.getElementById('send-btn').disabled=true;
+  if(!isFirst)appendMsg('user',msg);
+  showTyping();
+
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId,message:msg,isFirst})});
+    const d=await r.json();
+    rmTyping();
+    if(d.reply){
+      appendMsg('agent',d.reply);
+      chatHistory.push({role:'user',content:msg},{role:'assistant',content:d.reply});
+      speakText(d.reply);
+    }
+    if(d.booking){
+      toast(`✓ Booking saved — ${d.booking.name} at ${d.booking.time}`);
+      allBks.push(d.booking);
+    }
+  }catch(e){
+    rmTyping();
+    const fallback="I'm having a brief issue connecting. Please try again in a moment.";
+    appendMsg('agent',fallback);speakText(fallback);
+  }
+  document.getElementById('send-btn').disabled=false;
+}
+
+// Mic
+function setupMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const btn=document.getElementById('mic-btn');
+  if(!SR){btn.style.opacity='.4';btn.title='Voice not supported in this browser';return;}
+  const rec=new SR();rec.continuous=false;rec.interimResults=false;rec.lang='en-IN';
+  rec.onresult=e=>{document.getElementById('chat-input').value=e.results[0][0].transcript;};
+  rec.onend=()=>{recognizing=false;btn.classList.remove('on');};
+  rec.onerror=()=>{recognizing=false;btn.classList.remove('on');};
+  btn.onclick=()=>{
+    if(recognizing){rec.stop();}
+    else{recognizing=true;btn.classList.add('on');rec.start();}
+  };
+}
+
+// ── Config ────────────────────────────────────────────────────────────────
+async function loadCfg(){
+  try{cfg=await(await fetch('/api/config')).json();}
+  catch{cfg={name:'City Medical Centre',industry:'hospital',tagline:'Your health, our priority',hours:'Mon–Sat, 9AM–6PM',address:'Main City Centre',services:['General Consultation','Follow-up','Health Checkup'],slotDuration:30,workStart:'09:00',workEnd:'18:00',customFAQs:[],welcomeMessage:'Hello! Welcome to {NAME}. How may I assist you today?'};}
+  document.getElementById('sb-biz-name').textContent=cfg.name||'AI Receptionist';
+  const u=window.location.href.replace(/\/$|\/dashboard.*/,'');
+  document.getElementById('share-url').textContent=u;
+}
+function loadConfigForm(){
+  document.getElementById('c-name').value=cfg.name||'';
+  document.getElementById('c-industry').value=cfg.industry||'hospital';
+  document.getElementById('c-tagline').value=cfg.tagline||'';
+  document.getElementById('c-hours').value=cfg.hours||'';
+  document.getElementById('c-address').value=cfg.address||'';
+  document.getElementById('c-slot').value=cfg.slotDuration||30;
+  document.getElementById('c-welcome').value=cfg.welcomeMessage||'';
+  const sl=document.getElementById('services-list');
+  sl.innerHTML=(cfg.services||[]).map((s,i)=>`<div class="service-row"><input class="fi svc-inp" value="${s}" placeholder="Service name"/><button class="rm-btn" onclick="this.parentElement.remove()">×</button></div>`).join('');
+}
+function addService(){const sl=document.getElementById('services-list');const d=document.createElement('div');d.className='service-row';d.innerHTML='<input class="fi svc-inp" placeholder="Service name"/><button class="rm-btn" onclick="this.parentElement.remove()">×</button>';sl.appendChild(d);d.querySelector('input').focus();}
+async function saveConfig(){
+  const services=[...document.querySelectorAll('.svc-inp')].map(i=>i.value.trim()).filter(Boolean);
+  const c={name:document.getElementById('c-name').value.trim(),industry:document.getElementById('c-industry').value,tagline:document.getElementById('c-tagline').value.trim(),hours:document.getElementById('c-hours').value.trim(),address:document.getElementById('c-address').value.trim(),slotDuration:parseInt(document.getElementById('c-slot').value)||30,welcomeMessage:document.getElementById('c-welcome').value.trim(),services,workStart:'09:00',workEnd:'18:00',customFAQs:[]};
+  try{await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});}catch{}
+  cfg=c;document.getElementById('sb-biz-name').textContent=cfg.name;
+  toast('✓ Configuration saved');
+}
+
+function copyShareLink(){
+  const url=document.getElementById('share-url').textContent;
+  navigator.clipboard.writeText(url).then(()=>toast('✓ Link copied!')).catch(()=>toast('Copy the URL from the share box'));
+}
+
+// Input auto-resize
+document.getElementById('chat-input').addEventListener('input',function(){this.style.height='auto';this.style.height=this.scrollHeight+'px';});
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+document.getElementById('send-btn').addEventListener('click',()=>sendMsg());
+
+// ── Init ──────────────────────────────────────────────────────────────────
+(async()=>{
+  await loadCfg();
+  initCal();
+  loadBookings();
+  setupMic();
+  window.speechSynthesis?.getVoices();
+  setInterval(loadBookings,30000);
+})();
+</script>
+</body>
+</html>
